@@ -1,0 +1,49 @@
+# Reference: man i3blocks
+
+# Every block inherits these properties
+command=/usr/lib/i3blocks/$BLOCK_NAME
+separator_block_width=15
+markup=none
+
+[volume]
+label=VOL
+instance=Master
+interval=once
+signal=10
+
+[cpu_usage]
+label=CPU
+interval=10
+separator=false
+
+[memory]
+label=MEM
+separator=false
+interval=30
+
+[memory]
+label=SWAP
+instance=swap
+separator=false
+interval=30
+
+[disk]
+label=HOME
+interval=30
+
+# Uses default route interface
+[iface]
+color=#00FF00
+interval=10
+separator=false
+
+[bandwidth]
+interval=5
+
+[battery]
+label=⚡
+interval=30
+
+[time]
+command=date '+%Y-%m-%d %H:%M:%S'
+interval=5
