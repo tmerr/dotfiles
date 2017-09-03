@@ -4,5 +4,6 @@
 alias ls='ls --color=auto'
 alias mpsyt='xterm -fg white -bg black -e mpsyt &'
 export PATH="$HOME/.cargo/bin:$PATH"
+export PATH="$HOME/.bin:$PATH"
 
 PS1='[\u@\h \W]\$ '

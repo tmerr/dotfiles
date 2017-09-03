@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+
+
+"""for i3ipc-rs: bump version, push to git, publish to crates.io"""
+
+
+import os
+import argparse
+from subprocess import call, check_output, DEVNULL
+
+
+def update_version(version):
+    if os.path.basename(os.getcwd()) != 'i3ipc-rs':
+        print('cargo-bump-i3: not in i3ipc-rs directory', file=sys.stderr)
+        return
+    if (call(['git', 'diff', '--exit-code']) or
+        call(['git', 'diff', '--cached', '--exit-code'])
+    ):
+        print('cargo-bump-i3: aborting due to unstaged or uncommited changes.', file=sys.stderr)
+        return
+    hashes = [check_output(['git', 'rev-parse', x]) for x in ['HEAD', 'master', 'origin/master']]
+    if any(h != hashes[0] for h in hashes):
+        print('cargo-bump-i3: aborting because we assume HEAD == master == origin/master', file=sys.stderr)
+        return
+    if call(['cargo', 'test'], stderr=DEVNULL, stdout=DEVNULL) != 0:
+        print('cargo-bump-i3: aborting due to failed cargo test', file=sys.stderr)
+        return
+
+    # https://stackoverflow.com/questions/148451/how-to-use-sed-to-replace-only-the-first-occurrence-in-a-file
+    toml_subst = r'0,/version = ".*"/{{s/version = ".*"/version = "{}"/}}'.format(version)
+    check_output(['sed', '-i', '-E', toml_subst, 'Cargo.toml'])
+    readme_subst = r's/i3ipc = ".*"/i3ipc = "{}"/'.format(version)
+    check_output(['sed', '-i', '-E', readme_subst, 'README.md'])
+    check_output(['git', 'add', 'Cargo.toml', 'README.md'])
+    check_output(['git', 'commit', '-m', version])
+    call(['git', '--no-pager', 'show', 'HEAD'])
+    assert 0 == call(['cargo', 'package'])
+
+    if input('Point of no return. Push and publish? [y/N]: ').strip().lower() != 'y':
+        print('cargo-bump-i3: aborting; hard resetting to former head')
+        call(['git', 'reset', '--hard', 'HEAD~1'])
+        return
+
+    assert 0 == call(['git', 'push', 'origin', 'master'])
+    assert 0 == call(['cargo', 'publish'])
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='bump i3ipc version')
+    parser.add_argument('version', help='the new version x.y.z')
+    version = parser.parse_args().version
+    update_version(version)
