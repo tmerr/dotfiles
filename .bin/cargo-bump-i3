@@ -5,11 +5,12 @@
 
 
 import os
+import sys
 import argparse
 from subprocess import call, check_output, DEVNULL
 
 
-def update_version(version):
+def update_version(version, feature):
     if os.path.basename(os.getcwd()) != 'i3ipc-rs':
         print('cargo-bump-i3: not in i3ipc-rs directory', file=sys.stderr)
         return
@@ -29,8 +30,7 @@ def update_version(version):
     # https://stackoverflow.com/questions/148451/how-to-use-sed-to-replace-only-the-first-occurrence-in-a-file
     toml_subst = r'0,/version = ".*"/{{s/version = ".*"/version = "{}"/}}'.format(version)
     check_output(['sed', '-i', '-E', toml_subst, 'Cargo.toml'])
-    readme_subst = r's/i3ipc = ".*"/i3ipc = "{}"/'.format(version)
-    check_output(['sed', '-i', '-E', readme_subst, 'README.md'])
+    check_output(['cargo-gen-i3-readme', version, feature])
     check_output(['git', 'add', 'Cargo.toml', 'README.md'])
     check_output(['git', 'commit', '-m', version])
     call(['git', '--no-pager', 'show', 'HEAD'])
@@ -47,5 +47,6 @@ def update_version(version):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='bump i3ipc version')
     parser.add_argument('version', help='the new version x.y.z')
-    version = parser.parse_args().version
-    update_version(version)
+    parser.add_argument('feature', help='the newest feature version i3-x-y')
+    args = parser.parse_args()
+    update_version(args.version, args.feature)
